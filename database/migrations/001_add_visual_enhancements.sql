@@ -1,0 +1,30 @@
+-- Add visual enhancements to videos table
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS visual_enhancements JSONB DEFAULT '[]';
+
+-- Visual enhancements JSON structure:
+-- [
+--   {
+--     "slideNumber": 1,
+--     "annotations": [
+--       {
+--         "type": "arrow" | "circle" | "rectangle" | "text",
+--         "x": 100,
+--         "y": 200,
+--         "width": 50,
+--         "height": 50,
+--         "text": "Important!",
+--         "color": "#FF0000",
+--         "timestamp": 5.0
+--       }
+--     ],
+--     "zoomEffects": [
+--       {
+--         "x": 400,
+--         "y": 300,
+--         "scale": 1.5,
+--         "duration": 2.0,
+--         "timestamp": 10.0
+--       }
+--     ]
+--   }
+-- ]
