@@ -1,0 +1,132 @@
+// schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                     String    @id @default(uuid())
+  clerkUserId            String    @unique @map("clerk_user_id")
+  email                  String    @unique
+  firstName              String?   @map("first_name")
+  lastName               String?   @map("last_name")
+  subscriptionTier       String    @default("free") @map("subscription_tier")
+  subscriptionStatus     String    @default("active") @map("subscription_status")
+  stripeCustomerId       String?   @map("stripe_customer_id")
+  stripeSubscriptionId   String?   @map("stripe_subscription_id")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  videos         Video[]
+  usageStats     UsageStats[]
+  brandSettings  BrandSettings?
+
+  @@map("users")
+}
+
+model Video {
+  id                  String    @id @default(uuid())
+  userId              String    @map("user_id")
+  title               String
+  status              String    @default("uploaded")
+  slidesFileUrl       String?   @map("slides_file_url")
+  videoFileUrl        String?   @map("video_file_url")
+  thumbnailUrl        String?   @map("thumbnail_url")
+  storyMode           Boolean   @default(false) @map("story_mode")
+  storyTemplate       String?   @map("story_template")
+  voiceId             String?   @map("voice_id")
+  voiceSpeed          Float     @default(1.0) @map("voice_speed")
+  backgroundMusic     Boolean   @default(false) @map("background_music")
+  durationSeconds     Int?      @map("duration_seconds")
+  slideCount          Int?      @map("slide_count")
+  fileSizeBytes       BigInt?   @map("file_size_bytes")
+  resolution          String?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  completedAt         DateTime? @map("completed_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scripts      Script[]
+  audioFiles   AudioFile[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("videos")
+}
+
+model Script {
+  id                String    @id @default(uuid())
+  videoId           String    @map("video_id")
+  slideNumber       Int       @map("slide_number")
+  content           String
+  wordCount         Int?      @map("word_count")
+  estimatedDuration Int?      @map("estimated_duration")
+  edited            Boolean   @default(false)
+  generatedWithAi   Boolean   @default(true) @map("generated_with_ai")
+  aiCost            Decimal?  @map("ai_cost") @db.Decimal(10, 6)
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  video      Video       @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, slideNumber])
+  @@index([videoId])
+  @@map("scripts")
+}
+
+model AudioFile {
+  id               String    @id @default(uuid())
+  videoId          String    @map("video_id")
+  slideNumber      Int       @map("slide_number")
+  audioUrl         String    @map("audio_url")
+  durationSeconds  Float?    @map("duration_seconds")
+  fileSizeBytes    Int?      @map("file_size_bytes")
+  voiceId          String?   @map("voice_id")
+  voiceSpeed       Float?    @map("voice_speed")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  video      Video       @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, slideNumber])
+  @@index([videoId])
+  @@map("audio_files")
+}
+
+model UsageStats {
+  id                 String    @id @default(uuid())
+  userId             String    @map("user_id")
+  month              DateTime  @db.Date
+  videosCreated      Int       @default(0) @map("videos_created")
+  videosCompleted    Int       @default(0) @map("videos_completed")
+  storageUsedBytes   BigInt    @default(0) @map("storage_used_bytes")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+  @@index([userId, month])
+  @@map("usage_stats")
+}
+
+model BrandSettings {
+  id              String    @id @default(uuid())
+  userId          String    @unique @map("user_id")
+  logoUrl         String?   @map("logo_url")
+  logoPosition    String?   @map("logo_position")
+  introVideoUrl   String?   @map("intro_video_url")
+  outroVideoUrl   String?   @map("outro_video_url")
+  colorPrimary    String?   @map("color_primary")
+  colorSecondary  String?   @map("color_secondary")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("brand_settings")
+}
